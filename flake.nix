@@ -4,6 +4,15 @@
   outputs = { self, nixpkgs, ... }: let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; config.allowUnfree = true; };
+    ghidra-rc = pkgs.ghidra-bin.overrideAttrs (
+      old: {
+        version = "11.3";
+        src = pkgs.fetchzip {
+          url = "https://github.com/RootCubed/ghidra-ci/releases/download/2024-10-05/ghidra_11.3_DEV_20241005.zip";
+          hash = "sha256-DbPLoh1YgEYSPkV4LNsJehYi/NU1umJLpjqVR66vDGg=";
+        };
+      }
+    );
     objdiff = pkgs.rustPlatform.buildRustPackage rec {
         pname = "objdiff";
         version = "3.8.3";
@@ -29,7 +38,7 @@
     devShells."${system}".default = let
       in pkgs.mkShell {
         packages = [
-          pkgs.ghidra
+          ghidra-rc
           pkgs.steam-run  # For running objdiff
           objdiff
         ];
