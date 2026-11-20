@@ -1,9 +1,10 @@
 {
   description = "Development environment for tww";
 
-  outputs = { self, nixpkgs, ... }: let
+  outputs = { self, nixpkgs, ... }:
+  let
     system = "x86_64-linux";
-    pkgs = import nixpkgs { inherit system; config.allowUnfree = true; };
+    pkgs = import nixpkgs { inherit system; };
     ghidra-rc = pkgs.ghidra-bin.overrideAttrs (
       old: {
         version = "11.3";
@@ -25,6 +26,9 @@
 
         buildInputs = with pkgs; [
           fontconfig
+          libx11
+          libxcursor
+          libxi
         ];
         nativeBuildInputs = with pkgs; [
           pkg-config
@@ -33,13 +37,18 @@
         cargoLock = {
           lockFile = src + /Cargo.lock;
         };
+
+        postInstall = let
+            rpath = with pkgs; lib.makeLibraryPath [ libxkbcommon vulkan-loader ];
+          in "patchelf --add-rpath \"${rpath}\" $out/bin/objdiff";
+
+        dontPatchELF = true;
       };
-  in {
-    devShells."${system}".default = let
-      in pkgs.mkShell {
+  in
+  {
+    devShells."${system}".default = pkgs.mkShell {
         packages = [
           ghidra-rc
-          pkgs.steam-run  # For running objdiff
           objdiff
         ];
 
